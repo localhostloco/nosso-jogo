@@ -1,0 +1,2435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#2d1018">
+<title>Nosso Jogo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Italiana&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --wine-deep: #2a0e16;
+    --wine: #4a1c2a;
+    --wine-light: #6b2838;
+    --rose: #d4a5a5;
+    --rose-soft: #e8c5c5;
+    --blush: #f4d9d9;
+    --gold: #d4af7a;
+    --gold-bright: #e8c896;
+    --cream: #f5ead7;
+    --cream-dim: #d9ccb4;
+    --ink: #1a0810;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  body {
+    font-family: 'Cormorant Garamond', serif;
+    background:
+      radial-gradient(ellipse at top, var(--wine-light) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, var(--wine) 0%, transparent 60%),
+      linear-gradient(180deg, var(--wine-deep) 0%, var(--ink) 100%);
+    color: var(--cream);
+    min-height: 100vh;
+    min-height: 100dvh;
+    position: relative;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.95 0 0 0 0 0.85 0 0 0 0 0.7 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: overlay;
+  }
+
+  /* Vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .app {
+    position: relative;
+    z-index: 3;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 20px;
+    max-width: 520px;
+    margin: 0 auto;
+    overflow: hidden;
+  }
+
+  .screen {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.5s ease-out;
+  }
+
+  /* Telas que podem precisar rolar quando o teclado abre */
+  .screen.setup,
+  .screen.end {
+    overflow-y: auto;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes flourish {
+    from { opacity: 0; transform: scale(0.9) rotate(-2deg); }
+    to { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  /* ─── SETUP SCREEN ─── */
+  .setup {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-top: 8vh;
+  }
+
+  .ornament {
+    color: var(--gold);
+    font-size: 28px;
+    letter-spacing: 8px;
+    margin-bottom: 24px;
+    opacity: 0.8;
+    animation: flourish 1s ease-out;
+  }
+
+  .title {
+    font-family: 'Italiana', serif;
+    font-size: clamp(48px, 14vw, 72px);
+    font-weight: 400;
+    letter-spacing: 2px;
+    line-height: 0.95;
+    color: var(--cream);
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--rose);
+    letter-spacing: 1px;
+    margin-bottom: 40px;
+    font-weight: 300;
+  }
+
+  .input-group {
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: 18px;
+    text-align: left;
+  }
+
+  .input-label {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 8px;
+    padding-left: 4px;
+    font-weight: 500;
+  }
+
+  .input-field {
+    width: 100%;
+    background: rgba(245, 234, 215, 0.06);
+    border: none;
+    border-bottom: 1px solid var(--rose);
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    padding: 10px 4px;
+    outline: none;
+    transition: border-color 0.3s, background 0.3s;
+  }
+
+  .input-field:focus {
+    border-color: var(--gold);
+    background: rgba(245, 234, 215, 0.1);
+  }
+
+  .input-field::placeholder {
+    color: var(--cream-dim);
+    opacity: 0.4;
+    font-style: italic;
+  }
+
+  .btn {
+    background: linear-gradient(135deg, var(--rose) 0%, var(--gold) 100%);
+    color: var(--wine-deep);
+    border: none;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 16px 40px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(212, 165, 122, 0.3);
+    margin-top: 24px;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 10px rgba(212, 165, 122, 0.2);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--rose);
+    border: 1px solid var(--rose);
+    box-shadow: none;
+  }
+
+  .btn-ghost:active {
+    background: rgba(212, 165, 122, 0.1);
+  }
+
+  /* ─── MENU SCREEN ─── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(212, 165, 122, 0.2);
+    margin-bottom: 20px;
+  }
+
+  .header-title {
+    font-family: 'Italiana', serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--cream);
+  }
+
+  .header-reset {
+    color: var(--cream-dim);
+    font-size: 13px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 1px;
+    padding: 6px;
+    font-family: inherit;
+  }
+
+  .menu-hint {
+    text-align: center;
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 16px;
+    margin-bottom: 18px;
+    letter-spacing: 0.5px;
+  }
+
+  .categories {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 100px;
+    margin-bottom: -100px;
+  }
+
+  .cat-card {
+    position: relative;
+    background: linear-gradient(135deg, rgba(107, 40, 56, 0.6) 0%, rgba(74, 28, 42, 0.8) 100%);
+    border: 1px solid rgba(212, 165, 122, 0.25);
+    border-radius: 6px;
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.3s, box-shadow 0.3s;
+    overflow: hidden;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .cat-card::before {
+    content: '';
+    position: absolute;
+    top: 6px; left: 6px; right: 6px; bottom: 6px;
+    border: 1px solid rgba(212, 165, 122, 0.1);
+    border-radius: 4px;
+    pointer-events: none;
+  }
+
+  .cat-card:active {
+    transform: scale(0.96);
+    border-color: var(--gold);
+    box-shadow: 0 0 24px rgba(212, 165, 122, 0.25);
+  }
+
+  .cat-card.empty {
+    opacity: 0.3;
+    pointer-events: none;
+  }
+
+  .cat-icon {
+    font-family: 'Italiana', serif;
+    font-size: 26px;
+    color: var(--gold);
+    margin-bottom: 6px;
+    font-style: italic;
+  }
+
+  .cat-name {
+    font-size: 17px;
+    color: var(--cream);
+    letter-spacing: 0.5px;
+    line-height: 1.15;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+
+  .cat-count {
+    font-size: 11px;
+    color: var(--rose);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0.7;
+  }
+
+  .surprise-btn {
+    position: sticky;
+    bottom: 0;
+    background: linear-gradient(180deg, transparent 0%, var(--wine-deep) 30%);
+    padding: 20px 0 8px;
+    margin-top: auto;
+  }
+
+  /* ─── QUESTION SCREEN ─── */
+  .q-screen {
+    justify-content: space-between;
+    padding-bottom: 8px;
+  }
+
+  .q-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(212, 165, 122, 0.15);
+  }
+
+  .q-back {
+    background: transparent;
+    border: none;
+    color: var(--rose);
+    font-family: inherit;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px 8px;
+    letter-spacing: 1px;
+  }
+
+  .q-category {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  .q-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 12px;
+    position: relative;
+    animation: questionReveal 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes questionReveal {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .q-quote {
+    position: absolute;
+    font-family: 'Italiana', serif;
+    color: var(--gold);
+    opacity: 0.3;
+    font-size: 100px;
+    line-height: 0.8;
+  }
+
+  .q-quote.tl { top: -10px; left: -8px; }
+  .q-quote.br { bottom: -40px; right: -8px; transform: rotate(180deg); }
+
+  .q-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(26px, 6.5vw, 34px);
+    font-weight: 400;
+    line-height: 1.3;
+    text-align: center;
+    color: var(--cream);
+    letter-spacing: 0.3px;
+    padding: 0 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .q-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  .q-prompt {
+    text-align: center;
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 16px;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+
+  .q-btn {
+    background: rgba(245, 234, 215, 0.08);
+    border: 1px solid var(--rose);
+    color: var(--cream);
+    font-family: inherit;
+    font-size: 18px;
+    padding: 16px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    font-weight: 500;
+  }
+
+  .q-btn:active {
+    background: var(--rose);
+    color: var(--wine-deep);
+    transform: scale(0.97);
+  }
+
+  .q-btn.skip {
+    background: transparent;
+    border: 1px solid rgba(245, 234, 215, 0.2);
+    color: var(--cream-dim);
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .q-btn.skip:active {
+    background: rgba(245, 234, 215, 0.05);
+  }
+
+  .q-btn .name {
+    display: block;
+    font-weight: 600;
+    color: var(--gold);
+    font-size: 19px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .q-btn .label {
+    font-size: 13px;
+    color: var(--cream-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ─── END SCREEN ─── */
+  .end {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding-top: 6vh;
+  }
+
+  .end-flourish {
+    font-family: 'Italiana', serif;
+    font-size: 80px;
+    color: var(--gold);
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .end-title {
+    font-family: 'Italiana', serif;
+    font-size: 48px;
+    color: var(--cream);
+    letter-spacing: 2px;
+    margin-bottom: 32px;
+  }
+
+  .hidden { display: none !important; }
+
+
+  /* ─── PANEL (progress) ─── */
+  .panel {
+    margin-bottom: 22px;
+    padding: 16px 18px;
+    background: rgba(245, 234, 215, 0.04);
+    border: 1px solid rgba(212, 175, 122, 0.15);
+    border-radius: 4px;
+  }
+  .panel-names {
+    text-align: center;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    color: var(--cream);
+    margin-bottom: 12px;
+  }
+  .panel-heart { color: var(--rose); font-size: 14px; padding: 0 6px; }
+  .pbar {
+    height: 4px;
+    background: rgba(245, 234, 215, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .pbar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--rose), var(--gold));
+    border-radius: 2px;
+    transition: width 0.5s ease;
+  }
+  .panel-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .panel-progress { font-size: 14px; color: var(--cream-dim); letter-spacing: 1px; }
+  .panel-report {
+    background: transparent;
+    border: none;
+    color: var(--gold);
+    font-family: inherit;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .panel-counters {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    font-size: 14px;
+    letter-spacing: 1px;
+  }
+  .ct.sintonia { color: var(--gold-bright); }
+  .ct.diverge { color: var(--rose); }
+  .ct.depois { color: var(--cream-dim); }
+
+  /* ─── DEEP CATEGORIES ─── */
+  .cat-card.deep { border-color: rgba(212, 175, 122, 0.5); }
+  .cat-card.deep .cat-icon { color: var(--gold-bright); }
+
+  /* ─── RESULT BUTTONS ─── */
+  .result-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+  .r-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: rgba(245, 234, 215, 0.07);
+    border: 1px solid rgba(245, 234, 215, 0.2);
+    color: var(--cream);
+    font-family: inherit;
+    padding: 14px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .r-btn:active { transform: scale(0.96); }
+  .r-btn .r-icon { font-size: 20px; line-height: 1; }
+  .r-btn .r-label { font-size: 13px; letter-spacing: 0.5px; line-height: 1.1; text-align: center; }
+  .r-btn.sintonia { border-color: rgba(232, 200, 150, 0.55); }
+  .r-btn.sintonia .r-icon { color: var(--gold-bright); }
+  .r-btn.sintonia:active { background: rgba(232, 200, 150, 0.2); }
+  .r-btn.diverge { border-color: rgba(212, 165, 165, 0.55); }
+  .r-btn.diverge .r-icon { color: var(--rose); }
+  .r-btn.diverge:active { background: rgba(212, 165, 165, 0.2); }
+  .r-btn.depois .r-icon { color: var(--cream-dim); }
+  .r-btn.depois:active { background: rgba(245, 234, 215, 0.12); }
+
+  /* ─── REPORT ─── */
+  .report { padding-bottom: 8px; }
+  .rep-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: 18px;
+  }
+  .rep-final-title {
+    font-family: 'Italiana', serif;
+    font-size: 34px;
+    text-align: center;
+    color: var(--cream);
+    letter-spacing: 1px;
+    margin: 4px 0 8px;
+  }
+  .rep-totais {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .rep-stat {
+    text-align: center;
+    padding: 14px 6px;
+    background: rgba(245, 234, 215, 0.04);
+    border: 1px solid rgba(245, 234, 215, 0.12);
+    border-radius: 4px;
+  }
+  .rep-stat.sintonia { border-color: rgba(232, 200, 150, 0.4); }
+  .rep-stat.diverge { border-color: rgba(212, 165, 165, 0.4); }
+  .rep-num {
+    font-family: 'Italiana', serif;
+    font-size: 34px;
+    line-height: 1;
+    color: var(--cream);
+    margin-bottom: 4px;
+  }
+  .rep-stat.sintonia .rep-num { color: var(--gold-bright); }
+  .rep-stat.diverge .rep-num { color: var(--rose); }
+  .rep-lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--cream-dim); }
+  .rep-meta {
+    text-align: center;
+    font-size: 14px;
+    color: var(--cream-dim);
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+  .rep-interp {
+    font-size: 17px;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--rose-soft);
+    text-align: center;
+    padding: 0 8px;
+    margin-bottom: 22px;
+  }
+  .rep-interp strong { color: var(--gold-bright); font-weight: 600; }
+  .rep-section { margin-bottom: 22px; }
+  .rep-h {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(212, 175, 122, 0.2);
+  }
+  .rep-cat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 7px 2px;
+    font-size: 16px;
+  }
+  .rep-cat-name { color: var(--cream); }
+  .rep-cat-stats { color: var(--cream-dim); font-size: 14px; letter-spacing: 1px; }
+  .rep-item {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: rgba(245, 234, 215, 0.04);
+    border-left: 2px solid rgba(212, 175, 122, 0.4);
+    border-radius: 0 4px 4px 0;
+  }
+  .rep-item-cat {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--gold);
+    margin-bottom: 3px;
+  }
+  .rep-item-q { font-size: 16px; line-height: 1.35; color: var(--cream); }
+
+
+  /* ─── CUSTOM QUESTIONS ─── */
+  .cat-card.add-card {
+    border-style: dashed;
+    border-color: rgba(212, 165, 165, 0.4);
+    background: rgba(245, 234, 215, 0.02);
+  }
+  .cat-card.add-card .cat-icon { color: var(--rose); font-style: normal; }
+  .cust-form {
+    padding: 16px;
+    margin-bottom: 22px;
+    background: rgba(245, 234, 215, 0.04);
+    border: 1px solid rgba(212, 175, 122, 0.15);
+    border-radius: 4px;
+  }
+  .cust-textarea {
+    width: 100%;
+    background: rgba(245, 234, 215, 0.06);
+    border: 1px solid rgba(212, 165, 165, 0.4);
+    border-radius: 4px;
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    padding: 12px;
+    outline: none;
+    resize: vertical;
+    line-height: 1.4;
+  }
+  .cust-textarea:focus { border-color: var(--gold); }
+  .cust-textarea::placeholder { color: var(--cream-dim); opacity: 0.45; font-style: italic; }
+  .cust-select {
+    width: 100%;
+    background: rgba(42, 14, 22, 0.9);
+    border: 1px solid rgba(212, 165, 165, 0.4);
+    border-radius: 4px;
+    color: var(--cream);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 17px;
+    padding: 12px;
+    outline: none;
+    margin-top: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .cust-note {
+    margin-top: 12px;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--cream-dim);
+    text-align: center;
+    letter-spacing: 0.5px;
+  }
+  .cust-empty {
+    font-style: italic;
+    color: var(--cream-dim);
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 8px 4px;
+  }
+  .cust-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    background: rgba(245, 234, 215, 0.04);
+    border-left: 2px solid rgba(212, 165, 165, 0.4);
+    border-radius: 0 4px 4px 0;
+  }
+  .cust-item-body { flex: 1; min-width: 0; }
+  .cust-del {
+    background: transparent;
+    border: 1px solid rgba(212, 165, 165, 0.4);
+    border-radius: 4px;
+    color: var(--rose);
+    font-size: 14px;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .cust-del:active { background: rgba(212, 165, 165, 0.2); }
+
+
+  /* ─── MODES / CHIPS ─── */
+  .header-actions { display: flex; gap: 4px; }
+  .header-actions .header-reset { font-size: 17px; padding: 6px 8px; }
+  .chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .chip {
+    flex-shrink: 0;
+    background: rgba(245, 234, 215, 0.05);
+    border: 1px solid rgba(245, 234, 215, 0.2);
+    border-radius: 20px;
+    color: var(--cream-dim);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    padding: 7px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .chip.active {
+    background: linear-gradient(135deg, rgba(212, 165, 165, 0.25), rgba(212, 175, 122, 0.25));
+    border-color: var(--gold);
+    color: var(--gold-bright);
+  }
+  .chip:active { transform: scale(0.96); }
+
+  /* ─── CRESCENTE ─── */
+  .crescente-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 20px;
+  }
+  .crescente-phase {
+    font-family: 'Italiana', serif;
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: var(--gold-bright);
+    margin-bottom: 14px;
+  }
+  .crescente-dots { display: flex; gap: 10px; }
+  .cdot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: rgba(245, 234, 215, 0.15);
+    border: 1px solid rgba(212, 175, 122, 0.3);
+  }
+  .cdot.done { background: rgba(212, 175, 122, 0.5); }
+  .cdot.on { background: var(--gold-bright); border-color: var(--gold-bright); box-shadow: 0 0 8px rgba(232, 200, 150, 0.5); }
+  .crescente-hint {
+    margin-top: 14px;
+    font-size: 14px;
+    font-style: italic;
+    color: var(--cream-dim);
+    letter-spacing: 0.5px;
+  }
+
+  /* ─── FAVORITES ─── */
+  .q-fav {
+    background: transparent;
+    border: none;
+    color: var(--cream-dim);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 4px 10px;
+    width: 60px;
+    text-align: right;
+    font-family: inherit;
+  }
+  .q-fav.on { color: var(--gold-bright); text-shadow: 0 0 10px rgba(232, 200, 150, 0.5); }
+  .fav-actions { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+
+  /* ─── BACKUP / NOTES ─── */
+  .bk-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .rep-note {
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: rgba(212, 175, 122, 0.08);
+    border-radius: 4px;
+    font-size: 15px;
+    font-style: italic;
+    color: var(--rose-soft);
+    line-height: 1.4;
+  }
+  .note-btn {
+    background: transparent;
+    border: none;
+    color: var(--gold);
+    font-family: inherit;
+    font-size: 13px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 6px 0 0;
+    opacity: 0.8;
+  }
+  .note-area { margin-top: 10px; font-size: 16px; }
+
+  /* iOS-style smooth scroll */
+  .categories { -webkit-overflow-scrolling: touch; }
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+// ─── DATA ───
+const FACTORY = [
+  {
+    "id": "sobre-nos",
+    "name": "Sobre Nós",
+    "icon": "&",
+    "deep": false,
+    "level": 1,
+    "questions": [
+      "Qual foi a minha primeira impressão de você?",
+      "O que eu estava vestindo no nosso primeiro encontro?",
+      "Qual foi o momento exato em que eu percebi que estava apaixonado(a)?",
+      "Qual é a nossa 'música', na sua opinião?",
+      "Qual foi a viagem mais marcante que fizemos juntos?",
+      "Se a nossa história fosse um filme, qual seria o gênero?",
+      "Qual é a lembrança mais engraçada que temos juntos?",
+      "Qual é o hábito que eu adquiri depois que comecei a namorar você?",
+      "Qual foi o melhor presente que eu já te dei?",
+      "Se pudéssemos reviver um dia do nosso passado, qual seria?",
+      "Qual é o apelido nosso mais bobo que a gente já criou?",
+      "Qual foi a risada mais alta que demos juntos?",
+      "Qual é a piada interna nossa que ninguém de fora entenderia?",
+      "Qual foto nossa é a sua favorita e por quê?",
+      "Qual dificuldade que enfrentamos juntos mais fortaleceu a gente?",
+      "O que você acreditava sobre relacionamentos antes de mim que se provou errado?",
+      "O que você reprimiu ou deixou de ser desde que estamos juntos?",
+      "Se nos conhecêssemos hoje, do zero, você ainda me escolheria? O que pesaria?",
+      "Qual padrão ruim de relacionamentos passados você teme estarmos repetindo?",
+      "Existe alguma mágoa nossa antiga que você diz ter superado, mas não superou?"
+    ]
+  },
+  {
+    "id": "preferencias",
+    "name": "Mundo Interior",
+    "icon": "✦",
+    "deep": false,
+    "level": 2,
+    "questions": [
+      "O que te faz sentir verdadeiramente em paz?",
+      "Qual é a parte de você que poucas pessoas conhecem de verdade?",
+      "O que você precisa ouvir nos dias em que duvida de si mesmo(a)?",
+      "Qual elogio já te marcou tanto que você nunca esqueceu?",
+      "Quando foi a última vez que você se sentiu completamente compreendido(a)?",
+      "Qual conversa você gostaria de ter tido com alguém e nunca teve?",
+      "Do que você sente mais orgulho na sua trajetória até aqui?",
+      "Qual versão sua de cinco anos atrás se surpreenderia com quem você é hoje?",
+      "O que você faz quando ninguém está olhando e te deixa genuinamente feliz?",
+      "Qual emoção é a mais difícil de você demonstrar?",
+      "O que te dá a sensação de estar exatamente no lugar certo?",
+      "Qual medo seu tem mais a ver com o seu passado do que com o presente?",
+      "O que você gostaria que as pessoas entendessem sobre você sem precisar explicar?",
+      "Em que momento você sentiu que mais cresceu como pessoa?",
+      "O que ainda te machuca lembrar, mesmo já tendo passado?",
+      "Qual sonho você guardou na gaveta e ainda visita de vez em quando?",
+      "O que precisa acontecer pra você confiar de verdade em alguém?",
+      "Em que fase da vida você se sentiu mais sozinho(a)?",
+      "O que você aprendeu sobre amor que ninguém te ensinou?",
+      "Qual parte da sua personalidade você está tentando mudar agora?",
+      "O que te faz sentir vivo(a) de um jeito que mais nada consegue?",
+      "Qual das minhas tatuagens conta a história mais importante pra mim?",
+      "Qual foi a tatuagem que eu fiz mais por impulso e qual foi a mais pensada?",
+      "Tem alguma tatuagem minha que você não entende o significado e queria saber?",
+      "Qual é a sua tatuagem favorita em mim e por quê?",
+      "Tem alguma tatuagem minha que você não gosta muito? Pode ser honesto.",
+      "Qual foi a tatuagem mais dolorida que eu fiz?",
+      "Em qual fase da minha vida eu fiz cada uma das minhas tatuagens?",
+      "Tem alguma tatuagem que eu me arrependo de ter feito?",
+      "Se eu pudesse apagar uma tatuagem sem dor nenhuma, qual seria?",
+      "Qual tatuagem minha mudou de significado pra mim com o tempo?",
+      "Qual é a próxima tatuagem que eu quero fazer?",
+      "Se eu fizesse uma tatuagem em sua homenagem, o que faria sentido?",
+      "Você faria uma tatuagem de casal comigo? Qual seria?",
+      "Qual lugar do meu corpo eu nunca tatuaria?",
+      "Qual história das minhas tattoos foi a que mais te marcou quando te contei?",
+      "Se você pudesse desenhar uma tatuagem para eu fazer, como ela seria?",
+      "Qual estilo de tatuagem você acha que mais combina comigo?",
+      "Eu faria todas as minhas tatuagens de novo se voltasse no tempo?",
+      "Qual tatuagem minha você acha mais bonita esteticamente, independente do significado?",
+      "O que cada uma das minhas tatuagens diz sobre quem eu era na época em que fiz?",
+      "Qual parte de você você acha que eu nunca vou entender completamente?",
+      "O que você faz hoje só pra evitar conflito, engolindo o que sente?",
+      "Qual verdade sobre você mesmo(a) você tem medo de admitir em voz alta?",
+      "Em que momentos você se sente solitário(a) mesmo estando comigo?",
+      "O que você nunca perdoaria em si mesmo(a)?"
+    ]
+  },
+  {
+    "id": "personalidade",
+    "name": "Personalidade",
+    "icon": "◊",
+    "deep": false,
+    "level": 1,
+    "questions": [
+      "Qual é a minha mania mais estranha?",
+      "O que mais me tira do sério?",
+      "Qual é o meu maior medo?",
+      "Como você percebe que está prestes a perder a paciência, antes de explodir?",
+      "Como eu reajo quando estou com muito sono?",
+      "Qual é a minha maior qualidade?",
+      "Qual é o defeito que eu mais tento esconder?",
+      "O que me faz chorar (de rir ou de tristeza)?",
+      "O quanto a desordem ao seu redor reflete o que você está sentindo por dentro?",
+      "O que você mostra nas redes sociais é o que realmente sente? Onde mais difere?",
+      "Qual é o meu maior talento 'escondido'?",
+      "Como eu gosto de relaxar depois de um dia estressante?",
+      "Qual é a minha maior insegurança?",
+      "Eu sou uma pessoa de planejar tudo ou de agir no improviso?",
+      "O que eu faria se ganhasse na loteria amanhã?",
+      "Qual é a minha primeira reação quando alguém me elogia na cara?",
+      "Qual reação sua você gostaria de entender melhor em si mesmo(a)?",
+      "Qual situação me faz rir mais alto?",
+      "Eu canto no chuveiro? Qual seria a música?",
+      "Qual traço meu você tolera hoje mas teme não tolerar daqui a dez anos?",
+      "Qual diferença de personalidade entre nós vai exigir trabalho pra vida toda?",
+      "Quando você está no seu pior, o que você precisa que eu nunca faça?",
+      "Qual comportamento seu você sabe que me machuca e ainda não conseguiu mudar?"
+    ]
+  },
+  {
+    "id": "infancia",
+    "name": "Infância",
+    "icon": "✿",
+    "deep": false,
+    "level": 1,
+    "questions": [
+      "Qual foi a primeira vez que você se sentiu realmente compreendido(a) por alguém?",
+      "O que você acreditava com força quando criança e hoje enxerga de outro jeito?",
+      "Eu tinha algum apelido na infância? Qual?",
+      "Qual era o meu maior sonho quando eu era pequeno(a)?",
+      "Quem era o meu melhor amigo na escola?",
+      "Eu já quebrei algum osso ou fui hospitalizado(a)?",
+      "Qual é a minha lembrança mais feliz da infância?",
+      "Qual foi a maior travessura que eu já fiz?",
+      "Que tipo de criança você foi, e o que dela ainda vive em você hoje?",
+      "Qual brinquedo eu nunca esqueci?",
+      "Qual comida da infância eu ainda peço pra minha mãe fazer?",
+      "O que da sua infância você quer recriar com quem ama — e o que prefere deixar pra trás?",
+      "Qual foi a fantasia de festa que mais marcou a minha infância?",
+      "O que faltou na sua infância que você espera, talvez injustamente, que eu supra?",
+      "Qual ferida da sua criação ainda aparece nas nossas brigas?",
+      "O que dos seus pais como casal você jura não repetir — e já se pegou repetindo?",
+      "Que tipo de afeto você não recebeu em casa e ainda não sabe receber bem?"
+    ]
+  },
+  {
+    "id": "rotina",
+    "name": "Rotina",
+    "icon": "☼",
+    "deep": false,
+    "level": 1,
+    "questions": [
+      "Qual é a parte que eu mais gosto do meu trabalho?",
+      "E a que eu mais detesto?",
+      "Qual pequeno ritual do seu dia significa mais do que aparenta?",
+      "Quem você é quando está completamente sozinho(a) e ninguém te vê?",
+      "Qual é a primeira coisa que eu faço ao acordar?",
+      "Quando você busca silêncio, é pra descansar ou pra fugir de alguma coisa?",
+      "Qual é o meu maior objetivo profissional no momento?",
+      "Se eu pudesse mudar de profissão hoje, o que eu faria?",
+      "Pra onde a sua mente foge quando você se distrai no meio do dia?",
+      "O que a sua rotina de hoje revela sobre o que você anda priorizando na vida?",
+      "Qual é a bagunça que eu sempre faço na casa?",
+      "O que eu sempre esqueço de fazer e preciso ser lembrado?",
+      "Qual mania minha de organização (ou desorganização) te diverte?",
+      "Qual parte do meu dia você gostaria de acompanhar de perto uma vez?",
+      "O que falta na nossa rotina pra ela ter mais a nossa cara?",
+      "Qual hábito meu do dia a dia, se nunca mudar, pode virar um problema sério pra você?",
+      "Em que parte da nossa rotina você sente que dá mais do que recebe?",
+      "O que na convivência diária te desgasta em silêncio?",
+      "Se a nossa rotina continuar exatamente assim por dez anos, o que acontece com a gente?"
+    ]
+  },
+  {
+    "id": "futuro",
+    "name": "Sonhos & Futuro",
+    "icon": "✧",
+    "deep": false,
+    "level": 2,
+    "questions": [
+      "Qual é o lugar do mundo que eu mais quero conhecer?",
+      "Como seria a minha casa dos sonhos?",
+      "Quantos filhos (ou pets) eu quero ter?",
+      "Qual conquista você sonha em alcançar que não tem nada a ver com dinheiro?",
+      "Onde você nos vê daqui a 10 anos?",
+      "Se eu pudesse morar em qualquer país, qual seria?",
+      "Qual é a experiência radical que eu ainda quero ter (ex: pular de paraquedas)?",
+      "Que causa ou projeto social eu gostaria de apoiar?",
+      "Qual é o legado que eu quero deixar?",
+      "Qual é a primeira coisa da nossa 'lista de desejos' que vamos realizar?",
+      "Se a gente abrisse um negócio juntos amanhã, o que seria?",
+      "Qual viagem maluca a gente ainda vai fazer só pra rir depois?",
+      "Qual versão de nós dois daqui a um ano te deixaria orgulhoso(a)?",
+      "O que precisamos começar agora pra agradecer depois?",
+      "Qual sonho seu você abandonaria por mim — e qual nunca?",
+      "E se os nossos projetos de vida se revelarem incompatíveis: quem cede, e até onde?",
+      "Existe alguma versão do futuro em que ficamos juntos e mesmo assim você se arrepende?",
+      "Que vida você teria vivido se não tivéssemos nos conhecido — e ela te atrai?"
+    ]
+  },
+  {
+    "id": "hipoteticas",
+    "name": "Hipotéticas",
+    "icon": "?",
+    "deep": false,
+    "level": 1,
+    "questions": [
+      "Se eu fosse um animal, qual seria?",
+      "Qual superpoder eu escolheria ter?",
+      "Se eu fosse um personagem de ficção, quem eu seria?",
+      "Qual música eu cantaria em um karaokê agora?",
+      "Se eu pudesse jantar com qualquer pessoa viva ou morta, quem seria?",
+      "Em qual época da história eu gostaria de ter vivido?",
+      "Se o mundo acabasse amanhã, o que eu faria hoje?",
+      "Qual objeto eu salvaria primeiro em um incêndio?",
+      "Se eu pudesse mudar de nome, qual eu escolheria?",
+      "Qual seria o sabor do meu sorvete se eu fosse um?",
+      "Se eu tivesse uma banda, qual seria o nome dela?",
+      "Se eu pudesse viver dentro de qualquer série, qual eu escolheria?",
+      "Se a minha vida tivesse uma música de abertura, qual seria?",
+      "Se eu virasse um meme, qual seria?",
+      "Qual seria o meu nome artístico se eu fosse DJ?",
+      "Se a minha personalidade fosse um cômodo da casa, qual seria?",
+      "Se eu mudasse de religião ou de visão política radicalmente, onde estaria o seu limite?",
+      "Se eu ficasse incapacitado(a) por anos, o que você honestamente acha que faria?",
+      "Se você descobrisse uma traição minha de muitos anos atrás, ia querer saber?",
+      "Se um ex seu reaparecesse declarando amor, o que passaria pela sua cabeça?",
+      "Se tivéssemos que recomeçar do zero em outro país, só nós dois, a relação aguentaria?"
+    ]
+  },
+  {
+    "id": "desejos",
+    "name": "Desejos",
+    "icon": "♥",
+    "deep": false,
+    "level": 1,
+    "questions": [
+      "Qual é o meu tipo de massagem favorito?",
+      "Qual é a minha parte favorita do meu próprio corpo?",
+      "E qual é a parte do seu corpo que eu mais gosto?",
+      "O que eu considero mais romântico?",
+      "Qual é o meu 'encontro perfeito' ideal?",
+      "Qual gesto pequeno de carinho diz mais pra você do que grandes declarações?",
+      "O que te faz pensar em mim instantaneamente?",
+      "Qual é a frase que eu mais repito?",
+      "Como eu demonstro que estou bravo(a) sem falar nada?",
+      "Qual é o meu maior vício (ex: chocolate, café, celular)?",
+      "Qual é o tipo de carinho meu seu favorito?",
+      "O que faz você se sentir desejado(a) de verdade?",
+      "Existe algo na nossa intimidade que você gostaria de experimentar mas nunca falou?",
+      "Qual momento íntimo nosso você guarda como o mais especial?",
+      "O que te ajuda a se sentir à vontade pra falar sobre o que quer na cama?",
+      "Como você prefere que eu avise quando não estiver no clima, sem magoar?",
+      "O que mudou na sua forma de ver intimidade desde o começo da relação?",
+      "Qual carícia não-sexual te conecta mais comigo?",
+      "O que te deixa inseguro(a) na intimidade e como posso ajudar?",
+      "Pra você, qual é a diferença entre sexo bom e intimidade de verdade?",
+      "Que tipo de elogio meu te toca mais nesses momentos?",
+      "Qual horário do dia você mais sente vontade?",
+      "Você prefere luz acesa, apagada ou meia-luz?",
+      "O que te deixa no clima quase instantaneamente?",
+      "Qual roupa minha mexe mais com você?",
+      "Música no momento: ajuda, atrapalha ou tanto faz?",
+      "O que faz um beijo ser inesquecível pra você?",
+      "Qual lugar da casa você acha mais tentador fora do quarto?",
+      "Madrugada espontânea ou noite planejada com calma?",
+      "Provocação por mensagem durante o dia: gosta ou prefere ao vivo?",
+      "Qual memória íntima nossa te faz sorrir do nada?",
+      "Carinho depois: essencial, agradável ou você apaga em segundos?",
+      "Qual elogio você nunca cansa de ouvir nesses momentos?",
+      "O que você sente falta na nossa intimidade mas desistiu de pedir?",
+      "Existe algo que você aceita na nossa vida íntima só pra não me decepcionar?",
+      "O que o desejo por mim significa pra você quando estamos em crise?",
+      "Se a atração física diminuísse muito com os anos, o que sustentaria a gente?"
+    ]
+  },
+  {
+    "id": "reta-final",
+    "name": "Reta Final",
+    "icon": "✺",
+    "deep": false,
+    "level": 2,
+    "questions": [
+      "O que você ainda quer descobrir sobre você mesmo(a)?",
+      "Que tipo de lar — o sentimento, não a casa — você quer construir comigo?",
+      "O que te faz sentir seguro(a) o bastante pra ser totalmente você ao meu lado?",
+      "Qual é a coisa mais corajosa que você já fez por amor, a si mesmo(a) ou a alguém?",
+      "Qual é o hábito seu que eu mais acho fofo?",
+      "Qual é a coisa que eu mais admiro em você?",
+      "Qual é o nosso maior objetivo como casal este ano?",
+      "Se tivéssemos que escolher um hobby novo juntos, qual seria?",
+      "Qual é a melhor coisa de morar/estar com você?",
+      "O que eu mais quero fazer assim que terminarmos esta lista?",
+      "Qual foi o melhor almoço de domingo que a gente já fez juntos?",
+      "Qual pergunta este jogo deveria ter e não tem?",
+      "O que você descobriu sobre mim hoje que não sabia?",
+      "Qual pergunta deste jogo você respondeu sem ser totalmente honesto(a)?",
+      "O que você ainda está esperando que mude em mim pra se comprometer por inteiro?",
+      "Se hoje fosse a nossa última conversa, o que você precisaria me dizer?",
+      "Depois de tudo que conversamos: o que ficou mais claro e o que ficou mais difícil?"
+    ]
+  },
+  {
+    "id": "saude",
+    "name": "Saúde & Corpo",
+    "icon": "✚",
+    "deep": false,
+    "level": 2,
+    "questions": [
+      "Como você percebe que sua saúde mental está pedindo atenção?",
+      "O que você gostaria de mudar nos seus hábitos de sono?",
+      "Qual papel o exercício deve ter na nossa vida juntos?",
+      "Como você quer que eu reaja se notar que você não está bem fisicamente?",
+      "O que envelhecer significa pra você — medo, curiosidade, liberdade?",
+      "Qual hábito de saúde você admira em mim e qual te preocupa?",
+      "Como você se sente em relação ao seu corpo hoje, comparado a cinco anos atrás?",
+      "O que te impede de cuidar melhor de você mesmo(a)?",
+      "Check-ups e médicos: você vai por conta própria ou precisa de um empurrão?",
+      "Se um de nós precisasse mudar a alimentação por saúde, o outro mudaria junto?",
+      "Se eu desenvolvesse uma doença crônica, o que mudaria de verdade entre nós?",
+      "Qual hábito de saúde meu você esconde o quanto te preocupa?",
+      "Como ficaria a nossa relação se um de nós mudasse muito fisicamente?",
+      "Cuidar de alguém doente por anos cansa: como protegeríamos a relação se isso acontecer?"
+    ]
+  },
+  {
+    "id": "amizades",
+    "name": "Amizades",
+    "icon": "✼",
+    "deep": false,
+    "level": 2,
+    "questions": [
+      "Qual amizade sua mais me ajuda a entender quem você é?",
+      "O que você busca em um amigo que talvez não busque em mim?",
+      "Como você se sente quando passamos um fim de semana inteiro só nós dois?",
+      "Tem alguma amizade minha que você ainda não entendeu ou não se aproximou?",
+      "O que faria você se afastar de um amigo de longa data?",
+      "Quão importante é pra você que nossos círculos de amigos se misturem?",
+      "Como você imagina a nossa vida social daqui a dez anos?",
+      "Você sente falta de algum tipo de amizade que ainda não tem?",
+      "O que você admira na forma como eu cuido das minhas amizades?",
+      "Se um amigo meu te tratasse mal, como você gostaria que eu agisse?",
+      "Existe alguém no meu círculo que você acha que faz mal pra nossa relação?",
+      "Se um amigo meu desse em cima de você, você me contaria mesmo sabendo do estrago?",
+      "Você sente que perdeu amizades por minha causa? Isso te pesa?",
+      "Se a minha família ou amigos nunca te aceitassem de verdade, até onde você iria?"
+    ]
+  },
+  {
+    "id": "tecnologia",
+    "name": "Tecnologia & Telas",
+    "icon": "◉",
+    "deep": false,
+    "level": 2,
+    "questions": [
+      "Você sente que o celular já roubou momentos nossos? Quais?",
+      "Como seria um 'detox digital' de casal que você toparia fazer?",
+      "O que você sente quando me vê rolando a tela do lado, em silêncio?",
+      "Postar a nossa vida nas redes: o que é só nosso e o que pode ser público?",
+      "O trabalho invade a nossa casa pelas telas? Onde colocar o limite?",
+      "Qual conteúdo que você consome eu provavelmente nem imagino?",
+      "Jogos, séries, scroll: qual é o seu escape de tela e o que ele te dá?",
+      "Que regra de tecnologia você gostaria que valesse pra nós dois?",
+      "Como você se sente quando eu demoro pra responder as suas mensagens?",
+      "Se crianças da família nos copiassem no uso de telas, estaríamos dando bom exemplo?",
+      "O que você faz no celular que apagaria do histórico se eu fosse ver?",
+      "Seguir, curtir, conversar: onde começa a traição digital pra você?",
+      "Se eu te pedisse pra parar de seguir alguém específico, como você reagiria?",
+      "Tem algo da sua época de apps de relacionamento que você nunca me contou?"
+    ]
+  },
+  {
+    "id": "convivencia",
+    "name": "Convivência",
+    "icon": "⌂",
+    "deep": true,
+    "level": 3,
+    "questions": [
+      "Qual é a sua regra de ouro para manter a paz dentro de casa no dia a dia?",
+      "Como seria a divisão ideal de tarefas domésticas para você não se sentir sobrecarregado(a)?",
+      "Qual é a sua opinião sobre ter um tempo fixo na semana para sair com amigos, sem o parceiro?",
+      "O que você considera um 'espaço pessoal' inegociável dentro de uma casa?",
+      "Qual a importância de termos hobbies individuais e diferentes um do outro?",
+      "Como você imagina a rotina perfeita de um sábado de manhã daqui a cinco anos?",
+      "Qual a sua opinião sobre o uso de celular durante as refeições ou antes de dormir?",
+      "O que você faria se sentisse que a rotina da casa está ficando monótona?",
+      "Qual a sua expectativa sobre a frequência de visitas de amigos ou familiares na nossa casa?",
+      "Como você lida com a bagunça alheia quando está em um dia estressante?",
+      "Qual o seu posicionamento sobre uso recreativo de álcool ou outras substâncias no relacionamento?",
+      "Quão importante é demonstração de afeto em público pra você?",
+      "Como você se sente sobre eu ter privacidade total no celular — leria minhas mensagens em alguma situação?",
+      "Você quer ter pets? Quantos seriam confortável e quem cuidaria deles?",
+      "O que você espera de mim em aniversários e datas comemorativas?",
+      "Como você imagina dividir o cuidado da casa quando os dois estiverem exaustos no mesmo dia?",
+      "Qual estilo de vida você projeta — mais social/cheio de gente ou mais reservado em casa?",
+      "O que da convivência comigo você só aguenta porque ama — e até quando aguenta?",
+      "Qual concessão você faz em casa que está virando ressentimento?",
+      "Se morar junto revelasse um lado meu insuportável, você falaria ou iria acumulando?",
+      "Qual diferença nossa de padrão de organização pode explodir no futuro?",
+      "O que te faria querer morar em casas separadas mesmo continuando juntos?"
+    ]
+  },
+  {
+    "id": "financas",
+    "name": "Finanças",
+    "icon": "✣",
+    "deep": true,
+    "level": 3,
+    "questions": [
+      "Qual é o seu critério para decidir se uma compra grande vale a pena ou não?",
+      "Você prefere ter contas bancárias totalmente separadas ou uma conta conjunta para a casa?",
+      "O que você considera um 'gasto desnecessário' que pode gerar discussão?",
+      "Como você se sente sobre ajudar financeiramente algum parente que esteja em dificuldade?",
+      "Qual é a sua maior meta financeira para os próximos três anos?",
+      "Como você reagiria se um de nós recebesse uma proposta de trabalho incrível em outra cidade?",
+      "Qual a importância de ter uma reserva de emergência guardada, mesmo que falte para o lazer?",
+      "Você se considera uma pessoa que planeja os gastos ou que vive melhor o momento presente?",
+      "Qual seria a sua reação se eu decidisse mudar radicalmente de carreira e ganhar menos por um tempo?",
+      "Como você imagina que seria a nossa conversa se um de nós ficasse desempregado?",
+      "Você assinaria um acordo pré-nupcial e em que circunstâncias?",
+      "Você abriria mão de uma grande ambição profissional pelo nosso relacionamento?",
+      "Qual foi a melhor compra da sua vida — e por que valeu tanto?",
+      "O que dinheiro significava na sua casa quando você era criança?",
+      "Existe alguma dívida, gasto ou hábito financeiro que você esconde de mim?",
+      "Se você descobrisse que eu escondi uma dívida grande, o que isso quebraria?",
+      "Quem de nós dois lida pior com dinheiro — e como falar disso sem virar briga?",
+      "Você emprestaria as nossas economias pra alguém da sua família sem me consultar?",
+      "Se eu ganhasse muito mais (ou muito menos) que você pra sempre, isso mudaria a dinâmica?"
+    ]
+  },
+  {
+    "id": "familia",
+    "name": "Família",
+    "icon": "❁",
+    "deep": true,
+    "level": 3,
+    "questions": [
+      "Qual a importância de passar feriados e datas comemorativas com a família estendida?",
+      "Se tivéssemos filhos, qual seria o valor número um que você faria questão de ensinar?",
+      "Como você se sente sobre a ideia de morar perto (ou longe) dos pais e sogros?",
+      "Qual a sua opinião sobre o papel da religião ou espiritualidade na criação de uma família?",
+      "O que você considera uma interferência familiar exagerada na vida do casal?",
+      "Como você imagina a disciplina de um filho: seria o pai/mãe mais firme ou mais flexível?",
+      "Qual tradição da sua infância você faz questão de repetir na sua própria casa?",
+      "Qual a sua visão sobre a educação de crianças em relação ao uso de tecnologia e telas?",
+      "Como você se sente sobre a ideia de cuidar de pais idosos dentro de casa no futuro?",
+      "Se não pudéssemos ter filhos biológicos, qual seria a sua primeira reação ou alternativa?",
+      "Qual o papel da política nas nossas conversas e o que você não toleraria em uma opinião minha?",
+      "Se nossas crenças religiosas/espirituais divergissem profundamente, como resolveríamos?",
+      "Você quer ter filhos? Em quanto tempo? Quantos seriam o ideal?",
+      "Algum de nós deveria parar de trabalhar quando tivermos filhos, ou conciliar?",
+      "Qual a sua opinião sobre adoção como primeira escolha, não só plano B?",
+      "Se a sua mãe ou o seu pai me tratasse mal repetidamente, de que lado você ficaria na prática?",
+      "Existe algo que a sua família espera de você que conflita com a nossa relação?",
+      "Filhos: e se um quiser e o outro descobrir que não quer mais — o que fazemos?",
+      "Qual segredo de família seu eu ainda não conheço e deveria conhecer?",
+      "Se tivermos filhos e discordarmos profundamente da criação, quem dá a palavra final?"
+    ]
+  },
+  {
+    "id": "conflitos",
+    "name": "Conflitos",
+    "icon": "⚖",
+    "deep": true,
+    "level": 3,
+    "questions": [
+      "O que você considera uma 'briga produtiva' e o que considera uma briga desnecessária?",
+      "Quando você está chateado(a), prefere silêncio para pensar ou falar sobre o assunto imediatamente?",
+      "Qual é a sua definição de 'fidelidade' além do contato físico?",
+      "Como você se sente ao receber críticas construtivas sobre o seu jeito de ser?",
+      "Qual é a melhor forma de resolvermos um impasse quando os dois querem coisas opostas?",
+      "O que você considera uma quebra de confiança que seria muito difícil de recuperar?",
+      "Como você gostaria que eu reagisse quando você estivesse sob muita pressão no trabalho?",
+      "Qual a sua opinião sobre fazer terapia de casal para prevenir problemas, não só para remediar?",
+      "O que você faria se percebesse que estamos discordando muito sobre a educação dos filhos?",
+      "Como você se sente sobre compartilhar senhas de redes sociais ou dispositivos?",
+      "Como você reagiria se eu desenvolvesse um vício (jogo, álcool, outro)?",
+      "Como você lidaria comigo passando por uma crise grave de saúde mental?",
+      "Você faria terapia individual se eu pedisse, mesmo achando que não precisa?",
+      "O que você considera mentira inaceitável, mesmo que pequena?",
+      "Como você se sente sobre conversar com amigos próximos sobre os nossos problemas de casal?",
+      "Você prefere resolver crises grandes da vida sozinho(a) primeiro ou me incluir desde o começo?",
+      "Qual o seu limite com gritos, ofensas ou silêncio prolongado durante uma briga?",
+      "Qual briga nossa antiga ainda não acabou de verdade pra você?",
+      "O que você já pensou durante uma briga mas nunca teve coragem de dizer?",
+      "Você já pensou em terminar? O que te fez ficar?",
+      "Qual é o seu jeito sujo de brigar — o golpe baixo que você sabe que usa?",
+      "O que eu faço em discussões que te faz se fechar e desistir de argumentar?"
+    ]
+  },
+  {
+    "id": "compromisso",
+    "name": "Compromisso",
+    "icon": "∞",
+    "deep": true,
+    "level": 3,
+    "questions": [
+      "Qual é o seu maior medo em relação ao compromisso de longo prazo?",
+      "O que você não abriria mão por ninguém, nem pela pessoa que você ama?",
+      "Como você se imagina fisicamente e em termos de saúde daqui a 20 anos?",
+      "Qual é o seu conceito de um envelhecimento bem-sucedido ao lado de alguém?",
+      "Se pudéssemos realizar apenas um grande sonho juntos, qual deveria ser a nossa prioridade?",
+      "O que te faz sentir que uma relação está realmente evoluindo e não apenas 'parada'?",
+      "Qual a sua linguagem do amor predominante e como você gosta de ser validado(a)?",
+      "Se a gente ganhasse uma herança inesperada, qual seria a primeira coisa a fazer?",
+      "O que você espera que mude na nossa dinâmica quando morarmos juntos/casarmos?",
+      "Qual é a pergunta sobre o nosso futuro que você ainda não me fez por receio da resposta?",
+      "Qual frequência de intimidade física você considera saudável e o que faria você se sentir rejeitado(a)?",
+      "Você teria conversa aberta sobre fantasias sexuais ou prefere manter privado?",
+      "O que você considera traição emocional, mesmo sem nada físico ter acontecido?",
+      "Como você se sentiria se eu mantivesse amizade próxima com algum ex?",
+      "Qual o seu limite com amizades íntimas com pessoas do gênero pelo qual sente atração?",
+      "Você acredita em monogamia pra vida toda ou já considerou outros arranjos?",
+      "Como você imagina dividir momentos de doença grave — cuidar e ser cuidado?",
+      "Em que ponto você consideraria o divórcio uma opção real?",
+      "Tem alguma coisa do seu passado que ainda não me contou e que considera importante eu saber antes de um compromisso maior?",
+      "O que te assusta mais: ficar comigo pra sempre ou recomeçar sem mim?",
+      "Você está comigo por escolha ativa ou por inércia confortável? Como sabe a diferença?",
+      "Qual parte de você ainda mantém uma 'porta de saída' aberta nesta relação?",
+      "O que precisaria acontecer pra você lutar pela relação em vez de ir embora?",
+      "Se você soubesse que eu nunca vou mudar em nada, casaria comigo assim mesmo?"
+    ]
+  },
+  {
+    "id": "sexualidade",
+    "name": "Sexualidade",
+    "icon": "☾",
+    "deep": true,
+    "level": 3,
+    "questions": [
+      "De 0 a 10, quão satisfeito(a) você está com a nossa vida sexual — e o que falta pro 10?",
+      "Existe algo que fazemos por hábito que você na verdade não curte tanto?",
+      "Qual desejo você tem receio de contar — e de onde vem esse receio?",
+      "Você já fingiu prazer comigo? O que estava acontecendo de verdade?",
+      "O que é um 'não' definitivo pra você na cama, sem negociação?",
+      "Você já se sentiu pressionado(a) ou desconfortável em algum momento íntimo comigo?",
+      "Como devemos lidar quando um quer e o outro não — sem mágoa e sem cobrança?",
+      "Como está a nossa diferença de libido e como administrar os períodos fora de sincronia?",
+      "O que você precisa sentir antes pra conseguir se entregar de verdade?",
+      "Tem algo da sua história passada que ainda influencia como você é comigo na intimidade?",
+      "Pornografia: qual papel ela tem pra você e o que acha do uso dentro da relação?",
+      "Masturbação dentro do relacionamento: tabu, normal ou algo a combinar?",
+      "O que te faria perder o desejo por alguém — mesmo amando a pessoa?",
+      "Se a nossa frequência caísse a quase zero por meses, o que você faria?",
+      "Qual conversa sobre sexo nós estamos evitando ter?",
+      "Novidades e experimentação: qual a sua abertura real, sem responder o que eu quero ouvir?",
+      "Como você gostaria de receber um 'isso não funcionou pra mim' sem se sentir rejeitado(a)?",
+      "O que o sexo significa pra você na nossa relação: conexão, prazer, validação, rotina?",
+      "Existe alguma incompatibilidade sexual entre nós que você trata como 'problema seu' em silêncio?",
+      "O que você já quis pedir na cama e decidiu que 'não vale a briga'?",
+      "Atração por outras pessoas acontece: como você lida com isso por dentro?",
+      "Se a nossa vida sexual nunca melhorar além do que é hoje, isso basta pra sempre?",
+      "Qual experiência passada você teme que eu julgue se contar?"
+    ]
+  }
+];
+
+const NOSSAS_META = { id: 'nossas', name: 'Nossas Perguntas', icon: '✎', deep: false, level: 2 };
+const STORAGE_KEY = 'nossoJogoV2';
+const CUSTOM_KEY = 'nossoJogoCustomV1';
+const FAVS_KEY = 'nossoJogoFavsV1';
+
+const MODES = {
+  livre:     { name: 'Livre',     levels: [1, 2, 3] },
+  esquenta:  { name: 'Esquenta',  levels: [1] },
+  crescente: { name: 'Crescente', levels: [1, 2, 3] },
+  profundo:  { name: 'Profundo',  levels: [3] }
+};
+const CRESCENTE_PHASES = [
+  { upTo: 6,        levels: [1], label: 'Nível 1 · aquecendo' },
+  { upTo: 12,       levels: [2], label: 'Nível 2 · aprofundando' },
+  { upTo: Infinity, levels: [3], label: 'Nível 3 · no fundo' }
+];
+
+// Overrides de nível por pergunta (perguntas pesadas dentro de categorias leves)
+const Q_LEVEL = {
+ "O que você reprimiu ou deixou de ser desde que estamos juntos?": 3,
+ "Se nos conhecêssemos hoje, do zero, você ainda me escolheria? O que pesaria?": 3,
+ "Qual padrão ruim de relacionamentos passados você teme estarmos repetindo?": 3,
+ "Existe alguma mágoa nossa antiga que você diz ter superado, mas não superou?": 3,
+ "Qual parte de você você acha que eu nunca vou entender completamente?": 3,
+ "O que você faz hoje só pra evitar conflito, engolindo o que sente?": 3,
+ "Qual verdade sobre você mesmo(a) você tem medo de admitir em voz alta?": 3,
+ "Em que momentos você se sente solitário(a) mesmo estando comigo?": 3,
+ "O que você nunca perdoaria em si mesmo(a)?": 3,
+ "Qual traço meu você tolera hoje mas teme não tolerar daqui a dez anos?": 3,
+ "Qual diferença de personalidade entre nós vai exigir trabalho pra vida toda?": 3,
+ "Quando você está no seu pior, o que você precisa que eu nunca faça?": 3,
+ "Qual comportamento seu você sabe que me machuca e ainda não conseguiu mudar?": 3,
+ "O que faltou na sua infância que você espera, talvez injustamente, que eu supra?": 3,
+ "Qual ferida da sua criação ainda aparece nas nossas brigas?": 3,
+ "O que dos seus pais como casal você jura não repetir — e já se pegou repetindo?": 3,
+ "Que tipo de afeto você não recebeu em casa e ainda não sabe receber bem?": 3,
+ "Qual hábito meu do dia a dia, se nunca mudar, pode virar um problema sério pra você?": 3,
+ "Em que parte da nossa rotina você sente que dá mais do que recebe?": 3,
+ "O que na convivência diária te desgasta em silêncio?": 3,
+ "Se a nossa rotina continuar exatamente assim por dez anos, o que acontece com a gente?": 3,
+ "Qual sonho seu você abandonaria por mim — e qual nunca?": 3,
+ "E se os nossos projetos de vida se revelarem incompatíveis: quem cede, e até onde?": 3,
+ "Existe alguma versão do futuro em que ficamos juntos e mesmo assim você se arrepende?": 3,
+ "Que vida você teria vivido se não tivéssemos nos conhecido — e ela te atrai?": 3,
+ "Se eu mudasse de religião ou de visão política radicalmente, onde estaria o seu limite?": 3,
+ "Se eu ficasse incapacitado(a) por anos, o que você honestamente acha que faria?": 3,
+ "Se você descobrisse uma traição minha de muitos anos atrás, ia querer saber?": 3,
+ "Se um ex seu reaparecesse declarando amor, o que passaria pela sua cabeça?": 3,
+ "Se tivéssemos que recomeçar do zero em outro país, só nós dois, a relação aguentaria?": 3,
+ "O que você sente falta na nossa intimidade mas desistiu de pedir?": 3,
+ "Existe algo que você aceita na nossa vida íntima só pra não me decepcionar?": 3,
+ "O que o desejo por mim significa pra você quando estamos em crise?": 3,
+ "Se a atração física diminuísse muito com os anos, o que sustentaria a gente?": 3,
+ "Qual pergunta deste jogo você respondeu sem ser totalmente honesto(a)?": 3,
+ "O que você ainda está esperando que mude em mim pra se comprometer por inteiro?": 3,
+ "Se hoje fosse a nossa última conversa, o que você precisaria me dizer?": 3,
+ "Depois de tudo que conversamos: o que ficou mais claro e o que ficou mais difícil?": 3,
+ "Se eu desenvolvesse uma doença crônica, o que mudaria de verdade entre nós?": 3,
+ "Qual hábito de saúde meu você esconde o quanto te preocupa?": 3,
+ "Como ficaria a nossa relação se um de nós mudasse muito fisicamente?": 3,
+ "Cuidar de alguém doente por anos cansa: como protegeríamos a relação se isso acontecer?": 3,
+ "Existe alguém no meu círculo que você acha que faz mal pra nossa relação?": 3,
+ "Se um amigo meu desse em cima de você, você me contaria mesmo sabendo do estrago?": 3,
+ "Você sente que perdeu amizades por minha causa? Isso te pesa?": 3,
+ "Se a minha família ou amigos nunca te aceitassem de verdade, até onde você iria?": 3,
+ "O que você faz no celular que apagaria do histórico se eu fosse ver?": 3,
+ "Seguir, curtir, conversar: onde começa a traição digital pra você?": 3,
+ "Se eu te pedisse pra parar de seguir alguém específico, como você reagiria?": 3,
+ "Tem algo da sua época de apps de relacionamento que você nunca me contou?": 3,
+ "O que da convivência comigo você só aguenta porque ama — e até quando aguenta?": 3,
+ "Qual concessão você faz em casa que está virando ressentimento?": 3,
+ "Se morar junto revelasse um lado meu insuportável, você falaria ou iria acumulando?": 3,
+ "Qual diferença nossa de padrão de organização pode explodir no futuro?": 3,
+ "O que te faria querer morar em casas separadas mesmo continuando juntos?": 3,
+ "Existe alguma dívida, gasto ou hábito financeiro que você esconde de mim?": 3,
+ "Se você descobrisse que eu escondi uma dívida grande, o que isso quebraria?": 3,
+ "Quem de nós dois lida pior com dinheiro — e como falar disso sem virar briga?": 3,
+ "Você emprestaria as nossas economias pra alguém da sua família sem me consultar?": 3,
+ "Se eu ganhasse muito mais (ou muito menos) que você pra sempre, isso mudaria a dinâmica?": 3,
+ "Se a sua mãe ou o seu pai me tratasse mal repetidamente, de que lado você ficaria na prática?": 3,
+ "Existe algo que a sua família espera de você que conflita com a nossa relação?": 3,
+ "Filhos: e se um quiser e o outro descobrir que não quer mais — o que fazemos?": 3,
+ "Qual segredo de família seu eu ainda não conheço e deveria conhecer?": 3,
+ "Se tivermos filhos e discordarmos profundamente da criação, quem dá a palavra final?": 3,
+ "Qual briga nossa antiga ainda não acabou de verdade pra você?": 3,
+ "O que você já pensou durante uma briga mas nunca teve coragem de dizer?": 3,
+ "Você já pensou em terminar? O que te fez ficar?": 3,
+ "Qual é o seu jeito sujo de brigar — o golpe baixo que você sabe que usa?": 3,
+ "O que eu faço em discussões que te faz se fechar e desistir de argumentar?": 3,
+ "O que te assusta mais: ficar comigo pra sempre ou recomeçar sem mim?": 3,
+ "Você está comigo por escolha ativa ou por inércia confortável? Como sabe a diferença?": 3,
+ "Qual parte de você ainda mantém uma 'porta de saída' aberta nesta relação?": 3,
+ "O que precisaria acontecer pra você lutar pela relação em vez de ir embora?": 3,
+ "Se você soubesse que eu nunca vou mudar em nada, casaria comigo assim mesmo?": 3,
+ "Existe alguma incompatibilidade sexual entre nós que você trata como 'problema seu' em silêncio?": 3,
+ "O que você já quis pedir na cama e decidiu que 'não vale a briga'?": 3,
+ "Atração por outras pessoas acontece: como você lida com isso por dentro?": 3,
+ "Se a nossa vida sexual nunca melhorar além do que é hoje, isso basta pra sempre?": 3,
+ "Qual experiência passada você teme que eu julgue se contar?": 3
+};
+
+function qLevel(q, catId) {
+  if (Q_LEVEL[q] !== undefined) return Q_LEVEL[q];
+  if (catId === 'nossas') return NOSSAS_META.level;
+  const c = FACTORY.find(x => x.id === catId);
+  return c ? c.level : 2;
+}
+
+function anyAtLevels(levels) {
+  return allCategories().some(c => (state.remaining[c.id] || []).some(q => levels.includes(qLevel(q, c.id))));
+}
+
+function allowedLevels() {
+  if (state.mode === 'esquenta') return [1];
+  if (state.mode === 'profundo') return [3];
+  if (state.mode === 'crescente') {
+    const phase = crescentePhase().levels;
+    return anyAtLevels(phase) ? phase : [1, 2, 3];
+  }
+  return [1, 2, 3];
+}
+
+function poolForCount(catId) {
+  const levels = allowedLevels();
+  return (state.remaining[catId] || []).filter(q => levels.includes(qLevel(q, catId))).length;
+}
+
+// ─── CUSTOMS & FAVORITES (storages separados: sobrevivem ao reiniciar) ───
+function loadCustoms() {
+  try {
+    const a = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]');
+    return Array.isArray(a)
+      ? a.filter(x => x && typeof x.q === 'string' && x.q.trim() && typeof x.cat === 'string')
+      : [];
+  } catch (e) { return []; }
+}
+function saveCustoms() {
+  try { localStorage.setItem(CUSTOM_KEY, JSON.stringify(customs)); } catch (e) {}
+}
+let customs = loadCustoms();
+
+function loadFavs() {
+  try {
+    const a = JSON.parse(localStorage.getItem(FAVS_KEY) || '[]');
+    return Array.isArray(a)
+      ? a.filter(x => x && typeof x.q === 'string' && typeof x.cat === 'string')
+      : [];
+  } catch (e) { return []; }
+}
+function saveFavs() {
+  try { localStorage.setItem(FAVS_KEY, JSON.stringify(favs)); } catch (e) {}
+}
+let favs = loadFavs();
+
+function isFav(q) { return favs.some(f => f.q === q); }
+function toggleFav(q, cat) {
+  if (isFav(q)) favs = favs.filter(f => f.q !== q);
+  else favs.push({ q, cat });
+  saveFavs();
+}
+
+// ─── CATEGORY HELPERS ───
+function allCategories() {
+  const cats = FACTORY.slice();
+  if (customs.some(c => c.cat === 'nossas')) cats.push(NOSSAS_META);
+  return cats;
+}
+function questionsFor(catId) {
+  const factory = FACTORY.find(c => c.id === catId);
+  const base = factory ? factory.questions.slice() : [];
+  customs.forEach(c => { if (c.cat === catId) base.push(c.q); });
+  return base;
+}
+function totalQuestions() {
+  return FACTORY.reduce((s, c) => s + c.questions.length, 0) + customs.length;
+}
+function catName(id) {
+  if (id === 'nossas') return NOSSAS_META.name;
+  const c = FACTORY.find(c => c.id === id);
+  return c ? c.name : id;
+}
+function questionExists(text) {
+  const norm = text.trim().toLowerCase();
+  if (customs.some(c => c.q.trim().toLowerCase() === norm)) return true;
+  return FACTORY.some(c => c.questions.some(q => q.trim().toLowerCase() === norm));
+}
+
+// ─── STATE ───
+let state = {
+  players: [{ name: '' }, { name: '' }],
+  remaining: {},
+  records: [],            // { q, cat, r, note? }
+  mode: 'livre',
+  crescenteCount: 0,
+  currentCategory: null,
+  currentQuestion: null
+};
+
+function initRemaining() {
+  state.remaining = {};
+  allCategories().forEach(c => { state.remaining[c.id] = questionsFor(c.id); });
+}
+
+// ─── GAME PERSISTENCE ───
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      players: state.players,
+      remaining: state.remaining,
+      records: state.records,
+      mode: state.mode,
+      crescenteCount: state.crescenteCount
+    }));
+  } catch (e) {}
+}
+
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const s = JSON.parse(raw);
+    if (!s || !Array.isArray(s.records) || !s.players || !s.players[0] || !s.players[0].name) return false;
+    state.players = [
+      { name: String(s.players[0].name || 'Pessoa 1') },
+      { name: String(s.players[1] && s.players[1].name || 'Pessoa 2') }
+    ];
+    state.records = s.records.filter(r => r && typeof r.q === 'string' && typeof r.r === 'string');
+    state.mode = MODES[s.mode] ? s.mode : 'livre';
+    state.crescenteCount = Number.isFinite(s.crescenteCount) ? s.crescenteCount : 0;
+    state.remaining = {};
+    const answered = new Set(state.records.map(r => r.q));
+    allCategories().forEach(c => {
+      const valid = questionsFor(c.id);
+      const savedRem = s.remaining && Array.isArray(s.remaining[c.id])
+        ? s.remaining[c.id].filter(q => valid.includes(q))
+        : null;
+      if (savedRem !== null) {
+        valid.forEach(q => {
+          if (!savedRem.includes(q) && !answered.has(q)) savedRem.push(q);
+        });
+        state.remaining[c.id] = savedRem;
+      } else {
+        state.remaining[c.id] = valid.filter(q => !answered.has(q));
+      }
+    });
+    return true;
+  } catch (e) { return false; }
+}
+
+function clearSave() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+}
+
+// ─── HELPERS ───
+const $ = (s, el = document) => el.querySelector(s);
+const app = document.getElementById('app');
+
+function render(html) { app.innerHTML = html; }
+
+function escapeHTML(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function totalRemaining() {
+  return Object.values(state.remaining).reduce((sum, arr) => sum + arr.length, 0);
+}
+
+function counts() {
+  const c = { sintonia: 0, diverge: 0, depois: 0, pulado: 0 };
+  state.records.forEach(r => { if (c[r.r] !== undefined) c[r.r]++; });
+  return c;
+}
+
+function crescentePhase() {
+  return CRESCENTE_PHASES.find(p => state.crescenteCount < p.upTo) || CRESCENTE_PHASES[CRESCENTE_PHASES.length - 1];
+}
+
+function modeCategories() {
+  const cats = allCategories();
+  if (state.mode === 'livre') return cats;
+  return cats.filter(c => poolForCount(c.id) > 0);
+}
+
+// ─── BACKUP ───
+function buildBackup() {
+  let game = null;
+  try { game = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch (e) {}
+  return JSON.stringify({ v: 1, app: 'nosso-jogo', exportedAt: new Date().toISOString(), game, customs, favs });
+}
+
+function applyBackup(text) {
+  let data;
+  try { data = JSON.parse(text); } catch (e) { return 'JSON inválido. Confira se copiou o texto inteiro.'; }
+  if (!data || data.app !== 'nosso-jogo' || data.v !== 1) return 'Este texto não parece um backup do Nosso Jogo.';
+  if (Array.isArray(data.customs)) {
+    customs = data.customs.filter(x => x && typeof x.q === 'string' && typeof x.cat === 'string');
+    saveCustoms();
+  }
+  if (Array.isArray(data.favs)) {
+    favs = data.favs.filter(x => x && typeof x.q === 'string' && typeof x.cat === 'string');
+    saveFavs();
+  }
+  if (data.game && data.game.players) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data.game)); } catch (e) {}
+  }
+  return null; // sucesso
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// ─── SETUP ───
+function renderSetup() {
+  render(`
+    <div class="screen setup">
+      <div class="ornament">❦ ❦ ❦</div>
+      <h1 class="title">Nosso Jogo</h1>
+      <p class="subtitle">${totalQuestions()} perguntas, dois corações</p>
+
+      <div class="input-group">
+        <label class="input-label" for="p1">Pessoa 1</label>
+        <input class="input-field" id="p1" type="text" placeholder="Seu nome" maxlength="14" autocomplete="off" value="${escapeHTML(state.players[0].name)}">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="p2">Pessoa 2</label>
+        <input class="input-field" id="p2" type="text" placeholder="Nome do amor" maxlength="14" autocomplete="off" value="${escapeHTML(state.players[1].name)}">
+      </div>
+
+      <button class="btn" id="start-btn">Começar</button>
+      <button class="btn btn-ghost" id="setup-import" style="margin-top:12px;">Restaurar backup</button>
+    </div>
+  `);
+
+  $('#start-btn').addEventListener('click', () => {
+    state.players[0] = { name: $('#p1').value.trim() || 'Pessoa 1' };
+    state.players[1] = { name: $('#p2').value.trim() || 'Pessoa 2' };
+    state.records = [];
+    state.mode = 'livre';
+    state.crescenteCount = 0;
+    initRemaining();
+    save();
+    renderMenu();
+  });
+
+  $('#p2').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') $('#start-btn').click();
+  });
+
+  $('#setup-import').addEventListener('click', () => renderSettings(true));
+}
+
+// ─── MENU ───
+function renderMenu() {
+  const remaining = totalRemaining();
+  if (remaining === 0 && state.records.length > 0) { renderReport(true); return; }
+
+  const c = counts();
+  const answered = state.records.length;
+  const total = totalQuestions();
+  const pct = Math.min(100, Math.round((answered / Math.max(1, total)) * 100));
+
+  const modeChips = Object.entries(MODES).map(([id, m]) =>
+    `<button class="chip ${state.mode === id ? 'active' : ''}" data-mode="${id}">${m.name}</button>`
+  ).join('');
+
+  const cats = modeCategories();
+  const isCrescente = state.mode === 'crescente';
+
+  let middleHtml;
+  if (isCrescente) {
+    const phase = crescentePhase();
+    middleHtml = `
+      <div class="crescente-box">
+        <div class="crescente-phase">${phase.label}</div>
+        <div class="crescente-dots">
+          ${CRESCENTE_PHASES.map((p, i) => `<span class="cdot ${crescentePhase() === p ? 'on' : (CRESCENTE_PHASES.indexOf(crescentePhase()) > i ? 'done' : '')}"></span>`).join('')}
+        </div>
+        <button class="btn" id="crescente-draw" style="margin-top:18px;">Tirar próxima pergunta</button>
+        <p class="crescente-hint">${state.crescenteCount} respondida${state.crescenteCount === 1 ? '' : 's'} neste modo · a intensidade sobe sozinha</p>
+      </div>
+    `;
+  } else {
+    const visible = cats;
+    const catsHtml = visible.map(cat => {
+      const rem = poolForCount(cat.id);
+      const empty = rem === 0 ? 'empty' : '';
+      const deep = cat.deep ? 'deep' : '';
+      return `
+        <button class="cat-card ${empty} ${deep}" data-cat="${cat.id}" ${rem === 0 ? 'disabled' : ''}>
+          <div class="cat-icon">${cat.icon}</div>
+          <div class="cat-name">${escapeHTML(cat.name)}</div>
+          <div class="cat-count">${rem} ${rem === 1 ? 'perg.' : 'pergs.'}</div>
+        </button>
+      `;
+    }).join('');
+    const allEmpty = visible.every(c => poolForCount(c.id) === 0);
+    middleHtml = `
+      ${allEmpty ? '<p class="menu-hint" style="color:var(--gold);">As perguntas deste modo acabaram — troquem de modo acima.</p>' : ''}
+      <div class="categories">
+        ${catsHtml}
+        <button class="cat-card add-card" id="add-question">
+          <div class="cat-icon">+</div>
+          <div class="cat-name">Nova pergunta</div>
+          <div class="cat-count">criada por vocês</div>
+        </button>
+      </div>
+    `;
+  }
+
+  render(`
+    <div class="screen">
+      <header class="header">
+        <div class="header-title">NOSSO JOGO</div>
+        <div class="header-actions">
+          <button class="header-reset" id="settings">⚙</button>
+          <button class="header-reset" id="reset">↻</button>
+        </div>
+      </header>
+
+      <div class="panel">
+        <div class="panel-names">${escapeHTML(state.players[0].name)} <span class="panel-heart">❦</span> ${escapeHTML(state.players[1].name)}</div>
+        <div class="pbar"><div class="pbar-fill" style="width:${pct}%"></div></div>
+        <div class="panel-row">
+          <span class="panel-progress">${answered} de ${total}</span>
+          <button class="panel-report" id="report-link">ver relatório ›</button>
+        </div>
+        <div class="panel-counters">
+          <span class="ct sintonia">❤ ${c.sintonia}</span>
+          <span class="ct diverge">✕ ${c.diverge}</span>
+          <span class="ct depois">◷ ${c.depois}</span>
+        </div>
+      </div>
+
+      <div class="chips">${modeChips}</div>
+
+      ${isCrescente ? '' : '<p class="menu-hint">Escolha uma categoria…</p>'}
+
+      ${middleHtml}
+
+      ${isCrescente ? '' : `
+      <div class="surprise-btn">
+        <button class="btn btn-ghost" id="surprise">✦ Surpresa ✦</button>
+      </div>`}
+    </div>
+  `);
+
+  document.querySelectorAll('.chip[data-mode]').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.mode = chip.dataset.mode;
+      save();
+      renderMenu();
+    });
+  });
+
+  document.querySelectorAll('.cat-card[data-cat]').forEach(card => {
+    card.addEventListener('click', () => drawQuestion(card.dataset.cat));
+  });
+
+  const addBtn = $('#add-question');
+  if (addBtn) addBtn.addEventListener('click', () => renderCustoms());
+
+  const crescenteBtn = $('#crescente-draw');
+  if (crescenteBtn) crescenteBtn.addEventListener('click', () => {
+    const avail = modeCategories().filter(c => poolForCount(c.id) > 0);
+    if (avail.length === 0) { alert('As perguntas acabaram. Parabéns por chegarem até aqui!'); return; }
+    const pick = avail[Math.floor(Math.random() * avail.length)];
+    drawQuestion(pick.id);
+  });
+
+  const surpriseBtn = $('#surprise');
+  if (surpriseBtn) surpriseBtn.addEventListener('click', (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isRightSide = (e.clientX - rect.left) > rect.width / 2;
+
+    if (isRightSide) {
+      const deepAvail = allCategories().filter(c => c.deep && (state.remaining[c.id] || []).length > 0);
+      if (deepAvail.length > 0) {
+        const pick = deepAvail[Math.floor(Math.random() * deepAvail.length)];
+        drawQuestion(pick.id, null, true);
+        return;
+      }
+    }
+
+    const available = modeCategories().filter(c => poolForCount(c.id) > 0);
+    if (available.length === 0) return;
+    const pick = available[Math.floor(Math.random() * available.length)];
+    drawQuestion(pick.id);
+  });
+
+  $('#report-link').addEventListener('click', () => renderReport(false));
+  $('#settings').addEventListener('click', () => renderSettings(false));
+
+  $('#reset').addEventListener('click', () => {
+    if (confirm('Reiniciar o jogo? O progresso e o relatório serão apagados. Perguntas criadas e favoritas serão mantidas.')) {
+      state.records = [];
+      state.crescenteCount = 0;
+      initRemaining();
+      clearSave();
+      save();
+      renderMenu();
+    }
+  });
+}
+
+// ─── QUESTION ───
+function drawQuestion(catId, fixedQuestion, ignoreMode) {
+  if (fixedQuestion) {
+    state.currentCategory = catId;
+    state.currentQuestion = fixedQuestion;
+    renderQuestion(true);
+    return;
+  }
+  const pool = state.remaining[catId];
+  if (!pool || pool.length === 0) return;
+
+  const levels = ignoreMode ? [1, 2, 3] : allowedLevels();
+  const allowed = pool.filter(q => levels.includes(qLevel(q, catId)));
+  if (allowed.length === 0) return;
+
+  const q = allowed[Math.floor(Math.random() * allowed.length)];
+  pool.splice(pool.indexOf(q), 1);
+  state.currentCategory = catId;
+  state.currentQuestion = q;
+  renderQuestion(false);
+}
+
+function renderQuestion(isRevisit) {
+  const catId = state.currentCategory;
+  const q = state.currentQuestion;
+  const fav = isFav(q);
+
+  render(`
+    <div class="screen q-screen">
+      <header class="q-header">
+        <button class="q-back" id="back">‹ voltar</button>
+        <div class="q-category">${escapeHTML(catName(catId))}${isRevisit ? ' · revisita' : ''}</div>
+        <button class="q-fav ${fav ? 'on' : ''}" id="fav-toggle">${fav ? '★' : '☆'}</button>
+      </header>
+
+      <div class="q-card">
+        <div class="q-quote tl">“</div>
+        <p class="q-text">${escapeHTML(q)}</p>
+        <div class="q-quote br">“</div>
+      </div>
+
+      <div class="q-actions">
+        <p class="q-prompt">Depois de conversarem, como ficou?</p>
+        <div class="result-buttons">
+          <button class="r-btn sintonia" data-r="sintonia">
+            <span class="r-icon">❤</span><span class="r-label">Em sintonia</span>
+          </button>
+          <button class="r-btn diverge" data-r="diverge">
+            <span class="r-icon">✕</span><span class="r-label">Divergimos</span>
+          </button>
+          <button class="r-btn depois" data-r="depois">
+            <span class="r-icon">◷</span><span class="r-label">Conversar depois</span>
+          </button>
+        </div>
+        <button class="q-btn skip" id="skip">Pular pergunta</button>
+      </div>
+    </div>
+  `);
+
+  $('#back').addEventListener('click', () => {
+    if (!isRevisit && state.remaining[catId]) state.remaining[catId].push(q);
+    save();
+    renderMenu();
+  });
+
+  $('#fav-toggle').addEventListener('click', () => {
+    toggleFav(q, catId);
+    renderQuestion(isRevisit);
+  });
+
+  document.querySelectorAll('.r-btn[data-r]').forEach(btn => {
+    btn.addEventListener('click', () => recordResult(btn.dataset.r, isRevisit));
+  });
+
+  $('#skip').addEventListener('click', () => recordResult('pulado', isRevisit));
+}
+
+function recordResult(result, isRevisit) {
+  state.records.push({
+    q: state.currentQuestion,
+    cat: state.currentCategory,
+    r: result
+  });
+  if (state.mode === 'crescente' && !isRevisit && result !== 'pulado') {
+    state.crescenteCount++;
+  }
+  save();
+  renderMenu();
+}
+
+// ─── CUSTOM QUESTIONS SCREEN ───
+function renderCustoms() {
+  const catOptions = [
+    `<option value="nossas">✎ Nossas Perguntas</option>`,
+    ...FACTORY.map(c => `<option value="${c.id}">${escapeHTML(c.name)}</option>`)
+  ].join('');
+
+  const listHtml = customs.length === 0
+    ? '<p class="cust-empty">Nenhuma pergunta criada ainda. A primeira pode ser sobre qualquer coisa que vocês queiram conversar.</p>'
+    : customs.map(c => `
+      <div class="cust-item" data-id="${c.id}">
+        <div class="cust-item-body">
+          <div class="rep-item-cat">${escapeHTML(catName(c.cat))}</div>
+          <div class="rep-item-q">${escapeHTML(c.q)}</div>
+        </div>
+        <button class="cust-del" data-id="${c.id}" aria-label="apagar">✕</button>
+      </div>
+    `).join('');
+
+  render(`
+    <div class="screen report">
+      <header class="q-header">
+        <button class="q-back" id="back">‹ voltar</button>
+        <div class="q-category">Nossas Perguntas</div>
+        <div style="width: 60px;"></div>
+      </header>
+
+      <div class="rep-scroll">
+        <div class="cust-form">
+          <textarea class="cust-textarea" id="cust-text" maxlength="200" rows="3" placeholder="Escreva a pergunta de vocês…"></textarea>
+          <label class="input-label" for="cust-cat" style="margin-top:10px;">Categoria</label>
+          <select class="cust-select" id="cust-cat">${catOptions}</select>
+          <button class="btn" id="cust-add" style="margin-top:14px;">Adicionar pergunta</button>
+          <p class="cust-note">Suas perguntas ficam guardadas neste aparelho e sobrevivem ao reiniciar do jogo.</p>
+        </div>
+
+        <div class="rep-section">
+          <h2 class="rep-h">Criadas por vocês (${customs.length})</h2>
+          ${listHtml}
+        </div>
+      </div>
+    </div>
+  `);
+
+  $('#back').addEventListener('click', () => renderMenu());
+
+  $('#cust-add').addEventListener('click', () => {
+    const text = $('#cust-text').value.trim();
+    const cat = $('#cust-cat').value;
+    if (text.length < 5) { alert('A pergunta precisa de pelo menos 5 caracteres.'); return; }
+    if (questionExists(text)) { alert('Essa pergunta já existe no jogo.'); return; }
+
+    customs.push({ id: Date.now() + '-' + Math.floor(Math.random() * 1e6), q: text, cat });
+    saveCustoms();
+
+    if (state.players[0].name) {
+      if (!state.remaining[cat]) state.remaining[cat] = [];
+      state.remaining[cat].push(text);
+      save();
+    }
+    renderCustoms();
+  });
+
+  document.querySelectorAll('.cust-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      const item = customs.find(c => c.id === id);
+      if (!item) return;
+      if (!confirm('Apagar esta pergunta? Isso não pode ser desfeito.')) return;
+      customs = customs.filter(c => c.id !== id);
+      saveCustoms();
+      if (state.remaining[item.cat]) {
+        state.remaining[item.cat] = state.remaining[item.cat].filter(q => q !== item.q);
+        save();
+      }
+      renderCustoms();
+    });
+  });
+}
+
+// ─── SETTINGS / BACKUP / FAVORITES ───
+function renderSettings(fromSetup) {
+  const favsHtml = favs.length === 0
+    ? '<p class="cust-empty">Nenhuma favorita ainda. Toque na ☆ no topo de qualquer pergunta pra guardar aqui.</p>'
+    : favs.map((f, i) => `
+      <div class="cust-item">
+        <div class="cust-item-body">
+          <div class="rep-item-cat">${escapeHTML(catName(f.cat))}</div>
+          <div class="rep-item-q">${escapeHTML(f.q)}</div>
+        </div>
+        <div class="fav-actions">
+          <button class="cust-del fav-ask" data-i="${i}" aria-label="perguntar de novo">↺</button>
+          <button class="cust-del" data-unfav="${i}" aria-label="remover">✕</button>
+        </div>
+      </div>
+    `).join('');
+
+  render(`
+    <div class="screen report">
+      <header class="q-header">
+        <button class="q-back" id="back">‹ voltar</button>
+        <div class="q-category">Ajustes</div>
+        <div style="width: 60px;"></div>
+      </header>
+
+      <div class="rep-scroll">
+        <div class="rep-section">
+          <h2 class="rep-h">★ Favoritas (${favs.length})</h2>
+          ${favsHtml}
+        </div>
+
+        <div class="rep-section">
+          <h2 class="rep-h">Backup</h2>
+          <p class="cust-note" style="text-align:left; margin:0 0 10px;">Exporte tudo (progresso, perguntas criadas e favoritas) como texto. Guarde no bloco de notas ou mande pra vocês mesmos no WhatsApp. Pra restaurar, cole o texto abaixo.</p>
+          <button class="btn btn-ghost" id="bk-export">Exportar backup</button>
+          <textarea class="cust-textarea" id="bk-area" rows="4" placeholder="O backup aparece aqui ao exportar — ou cole um backup aqui pra restaurar." style="margin-top:12px;"></textarea>
+          <div class="bk-row">
+            <button class="q-btn" id="bk-copy">Copiar</button>
+            <button class="q-btn" id="bk-import">Restaurar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  $('#back').addEventListener('click', () => fromSetup ? renderSetup() : renderMenu());
+
+  document.querySelectorAll('.fav-ask').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const f = favs[parseInt(btn.dataset.i)];
+      if (!f) return;
+      if (!state.players[0].name) { alert('Comecem um jogo primeiro pra revisitar perguntas.'); return; }
+      drawQuestion(f.cat, f.q);
+    });
+  });
+
+  document.querySelectorAll('[data-unfav]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.unfav);
+      if (!confirm('Remover das favoritas?')) return;
+      favs.splice(i, 1);
+      saveFavs();
+      renderSettings(fromSetup);
+    });
+  });
+
+  $('#bk-export').addEventListener('click', () => {
+    $('#bk-area').value = buildBackup();
+  });
+
+  $('#bk-copy').addEventListener('click', async () => {
+    const text = $('#bk-area').value.trim();
+    if (!text) { alert('Exporte primeiro, ou cole um backup na caixa.'); return; }
+    const ok = await copyText(text);
+    alert(ok ? 'Copiado! Guarde em lugar seguro.' : 'Não consegui copiar automaticamente — selecione o texto e copie manualmente.');
+  });
+
+  $('#bk-import').addEventListener('click', () => {
+    const text = $('#bk-area').value.trim();
+    if (!text) { alert('Cole o texto do backup na caixa primeiro.'); return; }
+    if (!confirm('Restaurar este backup? O estado atual será substituído.')) return;
+    const err = applyBackup(text);
+    if (err) { alert(err); return; }
+    customs = loadCustoms();
+    favs = loadFavs();
+    if (loadSaved()) {
+      alert('Backup restaurado!');
+      renderMenu();
+    } else {
+      alert('Backup restaurado! (perguntas e favoritas — não havia jogo em andamento no backup)');
+      renderSetup();
+    }
+  });
+}
+
+// ─── SHARE ───
+function buildShareText() {
+  const c = counts();
+  const lines = [];
+  lines.push(`❦ Nosso Jogo — ${state.players[0].name} & ${state.players[1].name}`);
+  lines.push(`${state.records.length} de ${totalQuestions()} perguntas`);
+  lines.push(`❤ ${c.sintonia} em sintonia · ✕ ${c.diverge} divergências · ◷ ${c.depois} a conversar`);
+  const diverge = state.records.filter(r => r.r === 'diverge');
+  const depois = state.records.filter(r => r.r === 'depois');
+  if (diverge.length) {
+    lines.push('', '✕ Divergimos:');
+    diverge.forEach(r => lines.push(`• [${catName(r.cat)}] ${r.q}${r.note ? ` — nota: ${r.note}` : ''}`));
+  }
+  if (depois.length) {
+    lines.push('', '◷ Para conversar depois:');
+    depois.forEach(r => lines.push(`• [${catName(r.cat)}] ${r.q}${r.note ? ` — nota: ${r.note}` : ''}`));
+  }
+  return lines.join('\n');
+}
+
+// ─── REPORT ───
+let reportEditingIdx = -1;
+
+function renderReport(final) {
+  const c = counts();
+  const answered = c.sintonia + c.diverge + c.depois;
+  const total = totalQuestions();
+
+  const byCat = {};
+  state.records.forEach(r => {
+    if (!byCat[r.cat]) byCat[r.cat] = { sintonia: 0, diverge: 0, depois: 0, pulado: 0 };
+    if (byCat[r.cat][r.r] !== undefined) byCat[r.cat][r.r]++;
+  });
+  const divergeCats = Object.entries(byCat)
+    .filter(([, v]) => v.diverge > 0)
+    .sort((a, b) => b[1].diverge - a[1].diverge);
+
+  let interp = '';
+  if (answered === 0) {
+    interp = 'Ainda não há respostas registradas. Joguem um pouco e voltem aqui.';
+  } else if (c.diverge === 0 && c.depois === 0) {
+    interp = 'Até aqui, sintonia em tudo o que conversaram.';
+  } else {
+    const parts = [];
+    if (divergeCats.length > 0) {
+      const tops = divergeCats.slice(0, 3).map(([id]) => catName(id)).join(', ');
+      parts.push(`As divergências se concentram em: <strong>${escapeHTML(tops)}</strong> — bons temas para uma conversa com calma, sem pressa.`);
+    }
+    if (c.depois > 0) {
+      parts.push(`Vocês marcaram ${c.depois} pergunta${c.depois > 1 ? 's' : ''} para voltar depois — a lista está logo abaixo.`);
+    }
+    if (c.pulado >= 5) {
+      parts.push(`${c.pulado} perguntas foram puladas. Se algumas foram evitadas de propósito, talvez sejam justamente as mais importantes.`);
+    }
+    interp = parts.join(' ');
+  }
+
+  const itemHtml = (r) => {
+    const idx = state.records.indexOf(r);
+    const editing = reportEditingIdx === idx;
+    return `
+    <div class="rep-item">
+      <div class="rep-item-cat">${escapeHTML(catName(r.cat))}</div>
+      <div class="rep-item-q">${escapeHTML(r.q)}</div>
+      ${r.note && !editing ? `<div class="rep-note">✎ ${escapeHTML(r.note)}</div>` : ''}
+      ${editing ? `
+        <textarea class="cust-textarea note-area" id="note-area" maxlength="300" rows="2" placeholder="O que vocês concluíram?">${escapeHTML(r.note || '')}</textarea>
+        <div class="bk-row">
+          <button class="q-btn" data-note-save="${idx}">Salvar nota</button>
+          <button class="q-btn skip" data-note-cancel="1">Cancelar</button>
+        </div>
+      ` : `<button class="note-btn" data-note-edit="${idx}">${r.note ? 'editar nota' : '✎ adicionar nota'}</button>`}
+    </div>`;
+  };
+
+  const divergeList = state.records.filter(r => r.r === 'diverge');
+  const depoisList = state.records.filter(r => r.r === 'depois');
+
+  const catRowsHtml = divergeCats.map(([id, v]) => `
+    <div class="rep-cat-row">
+      <span class="rep-cat-name">${escapeHTML(catName(id))}</span>
+      <span class="rep-cat-stats">❤ ${v.sintonia} · ✕ ${v.diverge} · ◷ ${v.depois}</span>
+    </div>
+  `).join('');
+
+  render(`
+    <div class="screen report">
+      <header class="q-header">
+        ${final
+          ? '<div style="width:60px;"></div>'
+          : '<button class="q-back" id="rep-back">‹ voltar</button>'}
+        <div class="q-category">Relatório</div>
+        <div style="width: 60px;"></div>
+      </header>
+
+      ${final ? '<div class="end-flourish" style="text-align:center;">❦</div><h1 class="rep-final-title">Vocês chegaram ao fim</h1>' : ''}
+
+      <div class="rep-scroll">
+        <div class="rep-totais">
+          <div class="rep-stat sintonia"><div class="rep-num">${c.sintonia}</div><div class="rep-lbl">em sintonia</div></div>
+          <div class="rep-stat diverge"><div class="rep-num">${c.diverge}</div><div class="rep-lbl">divergências</div></div>
+          <div class="rep-stat depois"><div class="rep-num">${c.depois}</div><div class="rep-lbl">a conversar</div></div>
+        </div>
+        <p class="rep-meta">${state.records.length} de ${total} respondidas${c.pulado > 0 ? ` · ${c.pulado} puladas` : ''}</p>
+
+        <p class="rep-interp">${interp}</p>
+
+        ${answered > 0 ? '<button class="btn btn-ghost" id="share" style="margin-bottom:22px;">Compartilhar como texto</button>' : ''}
+
+        ${divergeCats.length > 0 ? `
+          <div class="rep-section">
+            <h2 class="rep-h">Onde divergiram</h2>
+            ${catRowsHtml}
+          </div>` : ''}
+
+        ${divergeList.length > 0 ? `
+          <div class="rep-section">
+            <h2 class="rep-h">✕ Divergências marcadas</h2>
+            ${divergeList.map(itemHtml).join('')}
+          </div>` : ''}
+
+        ${depoisList.length > 0 ? `
+          <div class="rep-section">
+            <h2 class="rep-h">◷ Para conversar depois</h2>
+            ${depoisList.map(itemHtml).join('')}
+          </div>` : ''}
+
+        ${final ? `
+          <button class="btn" id="restart" style="margin-top:24px;">Recomeçar do zero</button>
+          <button class="btn btn-ghost" id="newnames" style="margin-top:12px;">Trocar nomes</button>
+        ` : ''}
+      </div>
+    </div>
+  `);
+
+  if (!final) {
+    $('#rep-back').addEventListener('click', () => { reportEditingIdx = -1; renderMenu(); });
+  } else {
+    $('#restart').addEventListener('click', () => {
+      state.records = [];
+      state.crescenteCount = 0;
+      initRemaining();
+      clearSave();
+      save();
+      reportEditingIdx = -1;
+      renderMenu();
+    });
+    $('#newnames').addEventListener('click', () => {
+      state.records = [];
+      state.crescenteCount = 0;
+      initRemaining();
+      clearSave();
+      reportEditingIdx = -1;
+      renderSetup();
+    });
+  }
+
+  const shareBtn = $('#share');
+  if (shareBtn) shareBtn.addEventListener('click', async () => {
+    const text = buildShareText();
+    if (navigator.share) {
+      try { await navigator.share({ text }); return; } catch (e) { /* cancelado */ }
+    }
+    const ok = await copyText(text);
+    alert(ok ? 'Relatório copiado! É só colar no WhatsApp.' : 'Não consegui copiar automaticamente.');
+  });
+
+  document.querySelectorAll('[data-note-edit]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      reportEditingIdx = parseInt(btn.dataset.noteEdit);
+      renderReport(final);
+    });
+  });
+  document.querySelectorAll('[data-note-save]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = parseInt(btn.dataset.noteSave);
+      const text = $('#note-area').value.trim();
+      if (state.records[idx]) {
+        if (text) state.records[idx].note = text;
+        else delete state.records[idx].note;
+        save();
+      }
+      reportEditingIdx = -1;
+      renderReport(final);
+    });
+  });
+  document.querySelectorAll('[data-note-cancel]').forEach(btn => {
+    btn.addEventListener('click', () => { reportEditingIdx = -1; renderReport(final); });
+  });
+}
+
+// ─── INIT ───
+if (loadSaved()) {
+  renderMenu();
+} else {
+  renderSetup();
+}
+
+</script>
+</body>
+</html>
